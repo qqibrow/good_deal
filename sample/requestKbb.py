@@ -4,10 +4,10 @@ import requests
 from lxml import html
 import re
 import json
+import redis
 from collections import namedtuple
 
 VehicleIdentifier = namedtuple("VehicleIdentifier", "brand year body_type")
-
 
 def categories_page(vehicle):
     return "http://www.kbb.com/{0}/{1}/{2}/categories/".format(vehicle.brand, vehicle.body_type, vehicle.year)
@@ -42,31 +42,35 @@ for brand_category in response_in_json:
     vehicles.extend(vehicles_of_this_brand)
 
 # testing bmw links
-bmw_links = [categories_page(link) for link in vehicles if "BMW" in link.brand]
-bmw_links = [bmw_links[0]]
-
-choose_style_links = []
-for bmw_link in bmw_links:
-    result = _request_page(bmw_link)
-    tree = html.fromstring(result.content)
-    style_links_of_brand = ["http://www.kbb.com{}".format(a.get('href')) for a in
-                            tree.cssselect('div .mod-category-inner a')] or [bmw_link]
-    choose_style_links.extend(style_links_of_brand)
-
-option_pages = []
-for choose_style_link in choose_style_links:
-    result = _request_page(choose_style_link)
-    tree = html.fromstring(result.content)
-    option_links = ["http://www.kbb.com/{}".format(a.get('href')) for a in tree.cssselect('div .vehicle-styles-head a')]
-    # remove the page that customize the body type
-    regular_option_links = filter(lambda link: "compare-styles" not in link, option_links)
-    option_pages.extend(regular_option_links)
-
+selected_vehicles = [v for v in vehicles if "BMW" in v.brand]
+selected_vehicles = [selected_vehicles[0]]
 
 def _construct_detail_page(option_link):
     temp_link = option_link.replace("options/", "")
     return temp_link + "&options=&mileage=57812&condition=excellent&pricetype=private-party&zipo="
 
+option_pages = []
+
+link_to_vehicle = {}
+for vehicle in selected_vehicles:
+    vehicle_categories_page = categories_page(vehicle)
+    result = _request_page(vehicle_categories_page)
+    tree = html.fromstring(result.content)
+    style_links_of_brand = ["http://www.kbb.com{}".format(a.get('href')) for a in
+                            tree.cssselect('div .mod-category-inner a')] or [vehicle_categories_page]
+
+    for choose_style_link in style_links_of_brand:
+        result = _request_page(choose_style_link)
+        tree = html.fromstring(result.content)
+        option_links = ["http://www.kbb.com/{}".format(a.get('href')) for a in tree.cssselect('div .vehicle-styles-head a')]
+        # remove the page that customize the body type
+        regular_option_links = filter(lambda link: "compare-styles" not in link, option_links)
+        option_pages.extend(regular_option_links)
+
+        # add link to vehicle connection
+        for option_link in regular_option_links:
+            s = _construct_detail_page(option_link)
+            link_to_vehicle[s] = vehicle
 
 detail_pages = map(_construct_detail_page, option_pages)
 
@@ -77,12 +81,21 @@ def _get_price_from_matched_text(content):
     parsed_json = json.loads(content)
     return parsed_json["privatepartyexcellent"]["price"]
 
+r = redis.StrictRedis(host='localhost', port=6379, db=0)
+def write_to_redis(vehicle, model, j):
+    price = _get_price_from_matched_text(j)
+    key_in_dict = {'brand': vehicle.brand, 'year': vehicle.year, 'body_type': vehicle.body_type, 'model': model}
+    key = json.dumps(key_in_dict)
+    value = price
+    r.set(key, value)
 
 for detail_page in detail_pages:
     result = requests.get(detail_page, headers={'User-Agent': random.choice(USER_AGENTS)},
                           cookies={'PersistentZipCode': '94089'})
     matched = pattern.search(result.content)
+    extract_model_pattern = re.compile(ur'(?:' + str(year) + ur'\/)(.*?)(?:\/\?vehicleid)')
+    model = extract_model_pattern.search(detail_page)
     if matched:
-        print detail_page, _get_price_from_matched_text(matched.group(1)), '\n'
+        write_to_redis(link_to_vehicle[detail_page], model.group(1), matched.group(1))
 
 # task2. distribute version of request
