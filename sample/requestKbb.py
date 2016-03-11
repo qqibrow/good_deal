@@ -27,7 +27,8 @@ def _request_page(link):
 
 
 # get the car description
-brand_body_types_link = "http://www.kbb.com/jsdata/3.0.0.0_51577/_makesmodels?vehicleclass=UsedCar&yearid=2012"
+year = 2012
+brand_body_types_link = "http://www.kbb.com/jsdata/3.0.0.0_51577/_makesmodels?vehicleclass=UsedCar&yearid=%d" % year
 response = _request_page(brand_body_types_link)
 response_in_json = response.json()
 
@@ -36,7 +37,7 @@ vehicles = []
 for brand_category in response_in_json:
     name = brand_category["Name"].replace(' ', '-')
     body_types = [body_type['Name'] for body_type in brand_category['Model']]
-    vehicles_of_this_brand = [VehicleIdentifier(brand=name, year=2012, body_type=body_type.replace(' ', '-')) for
+    vehicles_of_this_brand = [VehicleIdentifier(brand=name, year=year, body_type=body_type.replace(' ', '-')) for
                               body_type in body_types]
     vehicles.extend(vehicles_of_this_brand)
 
