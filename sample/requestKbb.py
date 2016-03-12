@@ -87,7 +87,8 @@ def write_to_redis(vehicle, model, matched_text_in_detail_page):
     key_in_dict = {'brand': vehicle.brand, 'year': vehicle.year, 'body_type': vehicle.body_type, 'model': model}
     key = json.dumps(key_in_dict)
     value = price
-    r.hset(vehicle.brand, key, value)
+    # Write brand name lowercase map into redis.
+    r.hset(vehicle.brand.lower(), key, value)
 
 for detail_page in detail_pages:
     result = requests.get(detail_page, headers={'User-Agent': random.choice(USER_AGENTS)},
