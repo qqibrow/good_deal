@@ -3,3 +3,6 @@ init:
 
 test:
 	nosetests tests
+
+run_server:
+	python ./server/run.py
