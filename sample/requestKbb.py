@@ -82,12 +82,12 @@ def _get_price_from_matched_text(content):
     return parsed_json["privatepartyexcellent"]["price"]
 
 r = redis.StrictRedis(host='localhost', port=6379, db=0)
-def write_to_redis(vehicle, model, j):
-    price = _get_price_from_matched_text(j)
+def write_to_redis(vehicle, model, matched_text_in_detail_page):
+    price = _get_price_from_matched_text(matched_text_in_detail_page)
     key_in_dict = {'brand': vehicle.brand, 'year': vehicle.year, 'body_type': vehicle.body_type, 'model': model}
     key = json.dumps(key_in_dict)
     value = price
-    r.set(key, value)
+    r.hset(vehicle.brand, key, value)
 
 for detail_page in detail_pages:
     result = requests.get(detail_page, headers={'User-Agent': random.choice(USER_AGENTS)},
