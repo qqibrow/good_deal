@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>good deal</title>
+        <!-- styles -->
+    </head>
+    <body>
+    <div class="container">
+        <div id="the-basics">
+            <input class="typeahead" type="text" placeholder="States of USA">
+        </div>
+    </div>
+     <script src="{{ url_for('static', filename='bower_components/jquery/dist/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='typeahead.js/typeahead.jquery.min.js') }}"></script>
+    <script>
+        var substringMatcher = function(strs) {
+  return function findMatches(q, synFunc, asyncFuc) {
+                console.log("get result form " + q);
+                $.ajax({url: "/typeahead/" + q, success: function(results) {
+                    console.log("success");
+                    console.log(results);
+                    asyncFuc(results);
+                }})
+  };
+};
+
+var states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
+  'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
+  'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+  'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota',
+  'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
+  'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+];
+
+$('#the-basics .typeahead').typeahead({
+  hint: true,
+  highlight: true,
+  minLength: 1
+},
+{
+  name: 'states',
+  source: substringMatcher(states)
+});
+    </script>
+    </body>
+</html>
