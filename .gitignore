@@ -134,3 +134,4 @@ fabric.properties
 
 # self added
 server/app/static/bower_components/*
+*.rdb
