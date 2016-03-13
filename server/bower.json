@@ -1,0 +1,15 @@
+{
+  "name": "good_deal",
+  "homepage": "https://github.com/qqibrow/good_deal",
+  "authors": [
+    "qqibrow <qqibrow@gmail.com>"
+  ],
+  "description": "find a good car deal",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "react": "^0.14.7"
+  }
+}
