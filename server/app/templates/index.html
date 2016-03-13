@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <title>good deal</title>
         <!-- styles -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/examples.css') }}">
     </head>
     <body>
     <div class="container">
@@ -14,37 +15,46 @@
      <script src="{{ url_for('static', filename='bower_components/jquery/dist/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
     <script src="{{ url_for('static', filename='typeahead.js/typeahead.jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='typeahead.js/bloodhound.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='typeahead.js/typeahead.bundle.min.js') }}"></script>
     <script>
-        var substringMatcher = function(strs) {
+        var substringMatcher = function() {
   return function findMatches(q, synFunc, asyncFuc) {
                 console.log("get result form " + q);
                 $.ajax({url: "/typeahead/" + q, success: function(results) {
-                    console.log("success");
                     console.log(results);
-                    asyncFuc(results);
+                    /*
+                    var matchResults = [];
+                    $.each(results, function(result) {
+                        matchResults.push(result);
+                    })
+                    console.log(matchResults);
+                    */
+                    var results_json = JSON.parse(results);
+                    console.log(results_json);
+                    asyncFuc(results_json);
                 }})
   };
 };
 
-var states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
-  'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
-  'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-  'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-  'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota',
-  'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
-  'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
-  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-];
+        var bestPictures = new Bloodhound({
+  datumTokenizer: Bloodhound.tokenizers.obj.whitespace,
+  queryTokenizer: Bloodhound.tokenizers.whitespace,
+  remote: {
+    url: '/typeahead/%QUERY',
+    wildcard: '%QUERY'
+  }
+});
 
 $('#the-basics .typeahead').typeahead({
   hint: true,
   highlight: true,
-  minLength: 1
+  minLength: 3,
+    limit: 10,
 },
 {
-  name: 'states',
-  source: substringMatcher(states)
+  name: 'search_vehicles',
+  source: bestPictures
 });
     </script>
     </body>
