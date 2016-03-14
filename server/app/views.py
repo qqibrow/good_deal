@@ -13,13 +13,14 @@ def get_typeahead(brand):
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
     results = r.hgetall(brand)
 
+    all_keys = results.keys()
     # Turn results to a list.
-    results_in_json = json.dumps(results.keys())
     names = []
-    for r in results_in_json:
-        a = json.loads(r)
-        names.append(a["model"])
-    return names
+    for r in all_keys:
+        vehicle_description = json.loads(r)
+        name = "%s-%s-%s-%d" % (vehicle_description['brand'], vehicle_description['body_type'], vehicle_description['model'], vehicle_description['year'])
+        names.append(name)
+    return json.dumps(names)
 
 @app.route('/vehicle_price/<brand>')
 def get_all_vehicle_of_brand(brand):

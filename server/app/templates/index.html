@@ -14,29 +14,19 @@
     </div>
      <script src="{{ url_for('static', filename='bower_components/jquery/dist/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='typeahead.js/typeahead.jquery.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='typeahead.js/bloodhound.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='typeahead.js/typeahead.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='corejs-typeahead/typeahead.bundle.min.js') }}"></script>
     <script>
         var substringMatcher = function() {
   return function findMatches(q, synFunc, asyncFuc) {
                 console.log("get result form " + q);
                 $.ajax({url: "/typeahead/" + q, success: function(results) {
-                    console.log(results);
-                    /*
-                    var matchResults = [];
-                    $.each(results, function(result) {
-                        matchResults.push(result);
-                    })
-                    console.log(matchResults);
-                    */
+                    // I have to convert the results to json for it to work.
                     var results_json = JSON.parse(results);
                     console.log(results_json);
                     asyncFuc(results_json);
                 }})
   };
 };
-
         var bestPictures = new Bloodhound({
   datumTokenizer: Bloodhound.tokenizers.obj.whitespace,
   queryTokenizer: Bloodhound.tokenizers.whitespace,
