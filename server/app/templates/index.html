@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>good deal</title>
+        <!-- styles -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/examples.css') }}">
+    </head>
+    <body>
+    <div class="container">
+        <div id="the-basics">
+            <input class="typeahead" type="text" placeholder="States of USA">
+        </div>
+    </div>
+     <script src="{{ url_for('static', filename='bower_components/jquery/dist/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='corejs-typeahead/typeahead.bundle.min.js') }}"></script>
+    <script>
+        var substringMatcher = function() {
+  return function findMatches(q, synFunc, asyncFuc) {
+                console.log("get result form " + q);
+                $.ajax({url: "/typeahead/" + q, success: function(results) {
+                    // I have to convert the results to json for it to work.
+                    var results_json = JSON.parse(results);
+                    console.log(results_json);
+                    asyncFuc(results_json);
+                }})
+  };
+};
+        var bestPictures = new Bloodhound({
+  datumTokenizer: Bloodhound.tokenizers.obj.whitespace,
+  queryTokenizer: Bloodhound.tokenizers.whitespace,
+  remote: {
+    url: '/typeahead/%QUERY',
+    wildcard: '%QUERY'
+  }
+});
+
+$('#the-basics .typeahead').typeahead({
+  hint: true,
+  highlight: true,
+  minLength: 3,
+    limit: 10,
+},
+{
+  name: 'search_vehicles',
+  source: bestPictures
+});
+    </script>
+    </body>
+</html>

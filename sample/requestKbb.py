@@ -6,6 +6,18 @@ import re
 import json
 import redis
 from collections import namedtuple
+import logging
+import time
+import os.path
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+
+fname = 'data.txt'
+if not os.path.isfile(fname):
+    obj = open(fname, 'wb')
+else:
+    print "file %s already exists." % fname
+    exit(-1)
 
 VehicleIdentifier = namedtuple("VehicleIdentifier", "brand year body_type")
 
@@ -25,6 +37,8 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/2010
 def _request_page(link):
     return requests.get(link, headers={'User-Agent': random.choice(USER_AGENTS)})
 
+# the start of time of all
+start_time = time.time()
 
 # get the car description
 year = 2012
@@ -41,9 +55,13 @@ for brand_category in response_in_json:
                               body_type in body_types]
     vehicles.extend(vehicles_of_this_brand)
 
+end_time = time.time()
+logging.debug("fetched %d vehicles info in %d seconds" % (len(vehicles), start_time - end_time))
+
 # testing bmw links
-selected_vehicles = [v for v in vehicles if "BMW" in v.brand]
-selected_vehicles = [selected_vehicles[0]]
+# selected_vehicles = [v for v in vehicles if "BMW" in v.brand]
+# selected_vehicles = [selected_vehicles[0]]
+selected_vehicles = vehicles
 
 def _construct_detail_page(option_link):
     temp_link = option_link.replace("options/", "")
@@ -71,6 +89,7 @@ for vehicle in selected_vehicles:
         for option_link in regular_option_links:
             s = _construct_detail_page(option_link)
             link_to_vehicle[s] = vehicle
+    logging.debug("finished getting all the option_links of %s", vehicle.brand)
 
 detail_pages = map(_construct_detail_page, option_pages)
 
@@ -90,6 +109,14 @@ def write_to_redis(vehicle, model, matched_text_in_detail_page):
     # Write brand name lowercase map into redis.
     r.hset(vehicle.brand.lower(), key, value)
 
+
+def append_to_file(vehicle, model, matched_text_in_detail_page):
+    content = json.loads(matched_text_in_detail_page)
+    key_in_dict = {'brand': vehicle.brand, 'year': vehicle.year, 'body_type': vehicle.body_type, 'model': model, 'value': content}
+    json.dump(key_in_dict, obj)
+    obj.write('\n')
+
+
 for detail_page in detail_pages:
     result = requests.get(detail_page, headers={'User-Agent': random.choice(USER_AGENTS)},
                           cookies={'PersistentZipCode': '94089'})
@@ -97,6 +124,8 @@ for detail_page in detail_pages:
     extract_model_pattern = re.compile(ur'(?:' + str(year) + ur'\/)(.*?)(?:\/\?vehicleid)')
     model = extract_model_pattern.search(detail_page)
     if matched:
-        write_to_redis(link_to_vehicle[detail_page], model.group(1), matched.group(1))
+        append_to_file(link_to_vehicle[detail_page], model.group(1), matched.group(1))
+        logging.debug("written detailed page %s", detail_page)
+obj.close()
 
 # task2. distribute version of request
